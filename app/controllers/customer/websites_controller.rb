@@ -1,6 +1,6 @@
 class Customer::WebsitesController < ApplicationController
   before_action :ensure_customer
-  before_action :set_website, only: [:edit, :update, :preview, :publish, :unpublish]
+  before_action :set_website, only: [:edit, :update, :preview, :publish, :unpublish, :settings, :update_settings]
 
   def show
     @website = current_user.website
@@ -56,6 +56,20 @@ class Customer::WebsitesController < ApplicationController
       @current_theme_page = @theme_pages.find_by(page_type: @current_page) || @theme_pages.first
       @page_components = @current_theme_page&.theme_page_components&.includes(:component)&.order(:position) || []
       render :edit, status: :unprocessable_entity
+    end
+  end
+
+  # New settings action
+  def settings
+    # Just render the settings page
+  end
+
+  # New update_settings action
+  def update_settings
+    if @website.update(website_params)
+      redirect_to settings_customer_website_path, notice: 'Website settings updated successfully.'
+    else
+      render :settings, status: :unprocessable_entity
     end
   end
 

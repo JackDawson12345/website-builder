@@ -32,6 +32,8 @@ Rails.application.routes.draw do
         get :preview
         patch :publish
         patch :unpublish
+        get :settings  # Add settings route
+        patch :update_settings  # Add update settings route
       end
     end
 
