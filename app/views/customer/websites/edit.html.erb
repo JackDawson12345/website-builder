@@ -15,26 +15,19 @@
                       target: "_blank",
                       class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
 
-          <% if @website.published? %>
-            <%= link_to "Unpublish", unpublish_customer_website_path, method: :patch,
-                        confirm: "Are you sure you want to unpublish your website?",
-                        class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700" %>
-          <% else %>
-            <%= link_to "Publish", publish_customer_website_path, method: :patch,
-                        class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700" %>
-          <% end %>
+          <button id="save-all-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50">
+            Save All Changes
+          </button>
 
-          <%= link_to "Dashboard", customer_root_path,
-                      class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-        </div>
+          </div>
       </div>
     </div>
   </div>
 
   <div class="mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
+    <div class="flex gap-5">
       <!-- Sidebar -->
-      <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
+      <aside class="w-1/5">
         <nav class="space-y-1">
           <!-- Website Settings -->
           <div class="bg-white rounded-lg shadow p-4 mb-6">
@@ -83,59 +76,110 @@
       </aside>
 
       <!-- Main content -->
-      <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-medium text-gray-900">
-                <%= @current_theme_page&.page_type&.humanize || 'Page' %> Content
-              </h3>
-              <span class="text-sm text-gray-500">
-                <%= pluralize(@page_components.count, 'component') %>
-              </span>
-            </div>
+      <div class="w-4/5">
+        <div class="">
+          <div class="">
 
             <% if @page_components.any? %>
-              <div class="space-y-6">
-                <% @page_components.each do |page_component| %>
+              <div class="space-y-8">
+                <% @page_components.each_with_index do |page_component, index| %>
                   <% component = page_component.component %>
                   <% website_content = @website.website_contents.find_by(component: component) %>
 
-                  <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 class="text-md font-medium text-gray-900"><%= component.name %></h4>
-                        <p class="text-sm text-gray-500"><%= component.component_type.humanize %></p>
-                      </div>
-
-                      <% if website_content %>
-                        <%= link_to "Edit Content", edit_customer_content_path(website_content, page: @current_page),
-                                    class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
-                      <% end %>
-                    </div>
-
-                    <!-- Component Preview -->
-                    <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
-                      <% if website_content %>
-                        <%= raw render_component_with_user_content(component, website_content) %>
-                      <% else %>
-                        <p class="text-gray-500 italic">No content available for this component.</p>
-                      <% end %>
-                    </div>
-
-                    <!-- Editable Fields Summary -->
-                    <% if component.editable_fields_array.any? %>
-                      <div class="mt-3">
-                        <p class="text-xs text-gray-500 mb-2">Editable fields:</p>
-                        <div class="flex flex-wrap">
-                          <% component.editable_fields_array.each do |field| %>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-1">
-                              <%= field %>
-                            </span>
-                          <% end %>
+                  <div class="border border-gray-200" id="component-<%= component.id %>">
+                    <!-- Component Header -->
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 rounded-t-lg">
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <h4 class="text-md font-medium text-gray-900"><%= component.name %></h4>
+                          <p class="text-sm text-gray-500"><%= component.component_type.humanize %> Component</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <button class="toggle-edit-btn text-blue-600 hover:text-blue-800 text-sm font-medium" data-component="<%= component.id %>">
+                            Edit
+                          </button>
+                          <button class="toggle-preview-btn text-gray-600 hover:text-gray-800 text-sm font-medium hidden" data-component="<%= component.id %>">
+                            Preview
+                          </button>
                         </div>
                       </div>
-                    <% end %>
+                    </div>
+
+                    <!-- Component Preview (Always Visible) -->
+                    <div class="component-preview" id="preview-<%= component.id %>">
+                      <div class="">
+                        <% if website_content %>
+                          <%= raw render_component_with_user_content(component, website_content) %>
+                        <% else %>
+                          <p class="text-gray-500 italic">No content available for this component.</p>
+                        <% end %>
+                      </div>
+                    </div>
+
+                    <!-- Component Edit Form (Initially Hidden) -->
+                    <div class="component-edit hidden p-4" id="edit-<%= component.id %>">
+                      <% if website_content && component.editable_fields_array.any? %>
+                        <%= form_with model: website_content, url: customer_content_path(website_content), method: :patch, local: false, html: { class: "component-form space-y-4", data: { component_id: component.id } } do |f| %>
+                          <%= f.hidden_field :current_page, value: @current_page %>
+
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <% component.editable_fields_array.each do |field| %>
+                              <% current_value = website_content.get_content_for_field(field) %>
+
+                              <div class="form-field">
+                                <%= label_tag "content[#{field}]", field.humanize.titleize,
+                                              class: "block text-sm font-medium text-gray-700" %>
+
+                                <% if field.downcase.include?('description') || field.downcase.include?('content') || field.downcase.include?('bio') %>
+                                  <!-- Textarea for longer content -->
+                                  <%= text_area_tag "content[#{field}]", current_value,
+                                                    rows: 3,
+                                                    placeholder: get_placeholder_for_field(field),
+                                                    class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                                                    data: { field: field, component: component.id } %>
+                                <% elsif field.downcase.include?('email') %>
+                                  <!-- Email input -->
+                                  <%= email_field_tag "content[#{field}]", current_value,
+                                                      placeholder: get_placeholder_for_field(field),
+                                                      class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                                                      data: { field: field, component: component.id } %>
+                                <% elsif field.downcase.include?('phone') %>
+                                  <!-- Phone input -->
+                                  <%= telephone_field_tag "content[#{field}]", current_value,
+                                                          placeholder: get_placeholder_for_field(field),
+                                                          class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                                                          data: { field: field, component: component.id } %>
+                                <% elsif field.downcase.include?('url') || field.downcase.include?('link') %>
+                                  <!-- URL input -->
+                                  <%= url_field_tag "content[#{field}]", current_value,
+                                                    placeholder: get_placeholder_for_field(field),
+                                                    class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                                                    data: { field: field, component: component.id } %>
+                                <% else %>
+                                  <!-- Regular text input -->
+                                  <%= text_field_tag "content[#{field}]", current_value,
+                                                     placeholder: get_placeholder_for_field(field),
+                                                     class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                                                     data: { field: field, component: component.id } %>
+                                <% end %>
+
+                                <p class="mt-1 text-xs text-gray-500">
+                                  <%= get_help_text_for_field(field) %>
+                                </p>
+                              </div>
+                            <% end %>
+                          </div>
+
+
+                        <% end %>
+                      <% else %>
+                        <div class="text-center py-8">
+                          <p class="text-gray-500">No editable fields available for this component.</p>
+                        </div>
+                      <% end %>
+                    </div>
+
+
                   </div>
                 <% end %>
               </div>
@@ -154,3 +198,197 @@
     </div>
   </div>
 </div>
+
+<!-- Add component CSS for preview -->
+<style>
+  <% @website.theme.theme_pages.each do |page| %>
+  <% page.components.each do |component| %>
+  <%= component.css_content %>
+  <% end %>
+  <% end %>
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle edit mode for components
+        document.querySelectorAll('.toggle-edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const componentId = this.dataset.component;
+                const editSection = document.getElementById(`edit-${componentId}`);
+                const previewBtn = document.querySelector(`.toggle-preview-btn[data-component="${componentId}"]`);
+
+                editSection.classList.remove('hidden');
+                this.classList.add('hidden');
+                previewBtn.classList.remove('hidden');
+            });
+        });
+
+        // Toggle back to preview mode
+        document.querySelectorAll('.toggle-preview-btn, .cancel-edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const componentId = this.dataset.component;
+                const editSection = document.getElementById(`edit-${componentId}`);
+                const editBtn = document.querySelector(`.toggle-edit-btn[data-component="${componentId}"]`);
+                const previewBtn = document.querySelector(`.toggle-preview-btn[data-component="${componentId}"]`);
+
+                editSection.classList.add('hidden');
+                editBtn.classList.remove('hidden');
+                previewBtn.classList.add('hidden');
+            });
+        });
+
+        // Handle individual component form submissions via AJAX
+        document.querySelectorAll('.component-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const componentId = this.dataset.componentId;
+                const formData = new FormData(this);
+                const saveBtn = this.querySelector('.save-component-btn');
+                const originalText = saveBtn.textContent;
+
+                // Update button state
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                fetch(this.action, {
+                    method: 'PATCH',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update the preview with new content
+                            updateComponentPreview(componentId, data.updated_content);
+
+                            // Show success message
+                            showNotification('Component updated successfully!', 'success');
+
+                            // Switch back to preview mode
+                            const previewBtn = document.querySelector(`.toggle-preview-btn[data-component="${componentId}"]`);
+                            if (previewBtn) previewBtn.click();
+                        } else {
+                            showNotification('Error updating component: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('Error updating component', 'error');
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = originalText;
+                    });
+            });
+        });
+
+        // Live preview updates as user types
+        document.querySelectorAll('.component-field').forEach(field => {
+            field.addEventListener('input', function() {
+                const componentId = this.dataset.component;
+                const fieldName = this.dataset.field;
+                const value = this.value;
+
+                // Debounce the preview update
+                clearTimeout(this.previewTimer);
+                this.previewTimer = setTimeout(() => {
+                    updateFieldPreview(componentId, fieldName, value);
+                }, 300);
+            });
+        });
+
+        // Save all changes button
+        document.getElementById('save-all-btn')?.addEventListener('click', function() {
+            const forms = document.querySelectorAll('.component-form');
+            let completed = 0;
+            const total = forms.length;
+
+            if (total === 0) {
+                showNotification('No changes to save', 'info');
+                return;
+            }
+
+            this.disabled = true;
+            this.textContent = 'Saving...';
+
+            forms.forEach(form => {
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'PATCH',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        completed++;
+
+                        if (data.success) {
+                            const componentId = form.dataset.componentId;
+                            updateComponentPreview(componentId, data.updated_content);
+                        }
+
+                        if (completed === total) {
+                            showNotification('All components saved successfully!', 'success');
+                            this.disabled = false;
+                            this.textContent = 'Save All Changes';
+                        }
+                    })
+                    .catch(error => {
+                        completed++;
+                        console.error('Error:', error);
+
+                        if (completed === total) {
+                            showNotification('Some components failed to save', 'error');
+                            this.disabled = false;
+                            this.textContent = 'Save All Changes';
+                        }
+                    });
+            });
+        });
+
+        function updateComponentPreview(componentId, updatedContent) {
+            const previewElement = document.querySelector(`#preview-${componentId} .bg-gray-50`);
+            if (previewElement && updatedContent) {
+                previewElement.innerHTML = updatedContent;
+            }
+        }
+
+        function updateFieldPreview(componentId, fieldName, value) {
+            // This would update the preview in real-time
+            // For now, we'll skip this to avoid complexity, but it could be implemented
+            // by making an AJAX call to get updated HTML with the new field value
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 ${
+                type === 'success' ? 'bg-green-500' :
+                    type === 'error' ? 'bg-red-500' :
+                        'bg-blue-500'
+            }`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    });
+
+    // Add component JavaScript
+    <% @website.theme.theme_pages.each do |page| %>
+    <% page.components.each do |component| %>
+    <%= component.js_content %>
+    <% end %>
+    <% end %>
+</script>

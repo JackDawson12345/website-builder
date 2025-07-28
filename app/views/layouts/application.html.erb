@@ -11,6 +11,80 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom styles for website builder -->
+  <style>
+      /* Component editing transitions */
+      .component-edit {
+          transition: all 0.3s ease-in-out;
+      }
+
+      .component-edit.hidden {
+          opacity: 0;
+          max-height: 0;
+          overflow: hidden;
+      }
+
+      .component-edit:not(.hidden) {
+          opacity: 1;
+          max-height: none;
+      }
+
+      /* Form field focus states */
+      .component-field:focus {
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          border-color: #3b82f6;
+      }
+
+      /* Component preview styling */
+      .component-preview {
+          position: relative;
+      }
+
+      .component-preview::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border: 2px dashed transparent;
+          pointer-events: none;
+          transition: border-color 0.2s ease;
+      }
+
+      .component-preview:hover::before {
+          border-color: #e5e7eb;
+      }
+
+      /* Save button states */
+      .save-component-btn:disabled {
+          background-color: #9CA3AF;
+          cursor: not-allowed;
+      }
+
+      /* Notification animations */
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Sticky save button */
+      .sticky-save-bar {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid #e5e7eb;
+      }
+
+      /* Better focus indicators */
+      .focus-visible:focus {
+          outline: 2px solid #3b82f6;
+          outline-offset: 2px;
+      }
+  </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
@@ -45,7 +119,7 @@
   </nav>
 <% end %>
 
-<main class="flex-1">
+<main class="flex-1 page-content">
   <% if notice %>
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mx-4 mt-4">
       <%= notice %>
@@ -60,5 +134,458 @@
 
   <%= yield %>
 </main>
+
+<!-- Enhanced Website Builder JavaScript -->
+<script>
+    // Enhanced Website Builder JavaScript
+    class WebsiteBuilder {
+        constructor() {
+            this.init();
+            this.previewTimers = {};
+            this.unsavedChanges = new Set();
+        }
+
+        init() {
+            this.bindEvents();
+            this.setupAutoSave();
+            this.setupBeforeUnload();
+        }
+
+        bindEvents() {
+            // Component editing toggles
+            this.bindEditToggles();
+
+            // Form submissions
+            this.bindFormSubmissions();
+
+            // Live preview updates
+            this.bindLivePreview();
+
+            // Save all functionality
+            this.bindSaveAll();
+
+            // Keyboard shortcuts
+            this.bindKeyboardShortcuts();
+        }
+
+        bindEditToggles() {
+            // Show edit form
+            document.querySelectorAll('.toggle-edit-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const componentId = button.dataset.component;
+                    this.showEditForm(componentId);
+                });
+            });
+
+            // Hide edit form (preview mode)
+            document.querySelectorAll('.toggle-preview-btn, .cancel-edit-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const componentId = button.dataset.component;
+                    this.hideEditForm(componentId);
+                });
+            });
+        }
+
+        bindFormSubmissions() {
+            document.querySelectorAll('.component-form').forEach(form => {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveComponent(form);
+                });
+            });
+        }
+
+        bindLivePreview() {
+            document.querySelectorAll('.component-field').forEach(field => {
+                // Track changes for unsaved changes warning
+                field.addEventListener('input', () => {
+                    const componentId = field.dataset.component;
+                    this.unsavedChanges.add(componentId);
+                    this.updateSaveAllButton();
+                });
+
+                // Field validation
+                field.addEventListener('blur', (e) => {
+                    this.validateField(e.target);
+                });
+            });
+        }
+
+        bindSaveAll() {
+            const saveAllBtn = document.getElementById('save-all-btn');
+            if (saveAllBtn) {
+                saveAllBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.saveAllComponents();
+                });
+            }
+        }
+
+        bindKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl/Cmd + S to save all
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    this.saveAllComponents();
+                }
+
+                // Escape to cancel editing
+                if (e.key === 'Escape') {
+                    this.cancelAllEditing();
+                }
+            });
+        }
+
+        setupAutoSave() {
+            // Auto-save every 2 minutes if there are unsaved changes
+            setInterval(() => {
+                if (this.unsavedChanges.size > 0) {
+                    this.autoSave();
+                }
+            }, 120000); // 2 minutes
+        }
+
+        setupBeforeUnload() {
+            window.addEventListener('beforeunload', (e) => {
+                if (this.unsavedChanges.size > 0) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                    return e.returnValue;
+                }
+            });
+        }
+
+        showEditForm(componentId) {
+            const editSection = document.getElementById(`edit-${componentId}`);
+            const editBtn = document.querySelector(`.toggle-edit-btn[data-component="${componentId}"]`);
+            const previewBtn = document.querySelector(`.toggle-preview-btn[data-component="${componentId}"]`);
+
+            if (editSection && editBtn && previewBtn) {
+                editSection.classList.remove('hidden');
+                editBtn.classList.add('hidden');
+                previewBtn.classList.remove('hidden');
+
+                // Focus first input field
+                const firstField = editSection.querySelector('.component-field');
+                if (firstField) {
+                    firstField.focus();
+                }
+
+                // Add editing class to component card
+                const componentCard = document.getElementById(`component-${componentId}`);
+                if (componentCard) {
+                    componentCard.classList.add('editing');
+                }
+            }
+        }
+
+        hideEditForm(componentId) {
+            const editSection = document.getElementById(`edit-${componentId}`);
+            const editBtn = document.querySelector(`.toggle-edit-btn[data-component="${componentId}"]`);
+            const previewBtn = document.querySelector(`.toggle-preview-btn[data-component="${componentId}"]`);
+
+            if (editSection && editBtn && previewBtn) {
+                editSection.classList.add('hidden');
+                editBtn.classList.remove('hidden');
+                previewBtn.classList.add('hidden');
+
+                // Remove editing class from component card
+                const componentCard = document.getElementById(`component-${componentId}`);
+                if (componentCard) {
+                    componentCard.classList.remove('editing');
+                }
+            }
+        }
+
+        async saveComponent(form) {
+            const componentId = form.dataset.componentId;
+            const saveBtn = form.querySelector('.save-component-btn');
+            const originalText = saveBtn.textContent;
+
+            try {
+                // Update button state
+                this.setButtonLoading(saveBtn, 'Saving...');
+
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'PATCH',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': this.getCSRFToken(),
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update preview
+                    this.updateComponentPreview(componentId, data.updated_content);
+
+                    // Remove from unsaved changes
+                    this.unsavedChanges.delete(componentId);
+                    this.updateSaveAllButton();
+
+                    // Show success notification
+                    this.showNotification('Component updated successfully!', 'success');
+
+                    // Switch back to preview mode
+                    this.hideEditForm(componentId);
+
+                    // Mark fields as saved
+                    this.markFieldsAsSaved(form);
+
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+
+            } catch (error) {
+                console.error('Save error:', error);
+                this.showNotification(`Error: ${error.message}`, 'error');
+                this.markFieldsAsError(form);
+            } finally {
+                this.setButtonNormal(saveBtn, originalText);
+            }
+        }
+
+        async saveAllComponents() {
+            const forms = document.querySelectorAll('.component-form');
+            const saveAllBtn = document.getElementById('save-all-btn');
+
+            if (forms.length === 0) {
+                this.showNotification('No changes to save', 'info');
+                return;
+            }
+
+            this.setButtonLoading(saveAllBtn, 'Saving all...');
+
+            const promises = Array.from(forms).map(form => this.saveComponentSilent(form));
+
+            try {
+                const results = await Promise.allSettled(promises);
+
+                const successful = results.filter(r => r.status === 'fulfilled').length;
+                const failed = results.filter(r => r.status === 'rejected').length;
+
+                if (failed === 0) {
+                    this.showNotification(`All ${successful} components saved successfully!`, 'success');
+                    this.unsavedChanges.clear();
+                } else {
+                    this.showNotification(`${successful} saved, ${failed} failed`, 'warning');
+                }
+
+            } catch (error) {
+                this.showNotification('Error saving components', 'error');
+            } finally {
+                this.setButtonNormal(saveAllBtn, 'Save All Changes');
+                this.updateSaveAllButton();
+            }
+        }
+
+        async saveComponentSilent(form) {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'PATCH',
+                body: formData,
+                headers: {
+                    'X-CSRF-Token': this.getCSRFToken(),
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const componentId = form.dataset.componentId;
+                this.updateComponentPreview(componentId, data.updated_content);
+                this.unsavedChanges.delete(componentId);
+                this.markFieldsAsSaved(form);
+                return data;
+            } else {
+                throw new Error(data.error || 'Save failed');
+            }
+        }
+
+        updateComponentPreview(componentId, updatedContent) {
+            const previewElement = document.querySelector(`#preview-${componentId} .bg-gray-50`);
+            if (previewElement && updatedContent) {
+                // Fade out
+                previewElement.style.opacity = '0.5';
+
+                setTimeout(() => {
+                    previewElement.innerHTML = updatedContent;
+                    // Fade back in
+                    previewElement.style.opacity = '1';
+                }, 150);
+            }
+        }
+
+        validateField(field) {
+            const value = field.value.trim();
+            const fieldName = field.dataset.field;
+
+            // Basic validation rules
+            if (fieldName && fieldName.includes('email') && value) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) {
+                    this.markFieldAsError(field, 'Please enter a valid email address');
+                    return false;
+                }
+            }
+
+            if (fieldName && fieldName.includes('url') && value) {
+                try {
+                    new URL(value.startsWith('http') ? value : 'https://' + value);
+                } catch {
+                    this.markFieldAsError(field, 'Please enter a valid URL');
+                    return false;
+                }
+            }
+
+            this.markFieldAsValid(field);
+            return true;
+        }
+
+        markFieldAsError(field, message) {
+            field.classList.add('field-error');
+            field.classList.remove('field-success');
+
+            // Show error message
+            let errorElement = field.parentNode.querySelector('.field-error-message');
+            if (!errorElement) {
+                errorElement = document.createElement('p');
+                errorElement.className = 'field-error-message';
+                field.parentNode.appendChild(errorElement);
+            }
+            errorElement.textContent = message;
+        }
+
+        markFieldAsValid(field) {
+            field.classList.remove('field-error');
+            field.classList.add('field-success');
+
+            // Remove error message
+            const errorElement = field.parentNode.querySelector('.field-error-message');
+            if (errorElement) {
+                errorElement.remove();
+            }
+        }
+
+        markFieldsAsSaved(form) {
+            form.querySelectorAll('.component-field').forEach(field => {
+                field.classList.remove('field-error');
+                field.classList.add('field-success');
+
+                // Remove error messages
+                const errorElement = field.parentNode.querySelector('.field-error-message');
+                if (errorElement) {
+                    errorElement.remove();
+                }
+            });
+
+            // Remove success styling after 2 seconds
+            setTimeout(() => {
+                form.querySelectorAll('.component-field').forEach(field => {
+                    field.classList.remove('field-success');
+                });
+            }, 2000);
+        }
+
+        markFieldsAsError(form) {
+            form.querySelectorAll('.component-field').forEach(field => {
+                field.classList.add('field-error');
+                field.classList.remove('field-success');
+            });
+        }
+
+        updateSaveAllButton() {
+            const saveAllBtn = document.getElementById('save-all-btn');
+            if (saveAllBtn) {
+                if (this.unsavedChanges.size > 0) {
+                    saveAllBtn.textContent = `Save All Changes (${this.unsavedChanges.size})`;
+                    saveAllBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                    saveAllBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                } else {
+                    saveAllBtn.textContent = 'Save All Changes';
+                    saveAllBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    saveAllBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                }
+            }
+        }
+
+        autoSave() {
+            console.log('Auto-saving...');
+            this.saveAllComponents();
+            this.showNotification('Auto-saved', 'info');
+        }
+
+        cancelAllEditing() {
+            document.querySelectorAll('.component-edit:not(.hidden)').forEach(editSection => {
+                const componentId = editSection.id.replace('edit-', '');
+                this.hideEditForm(componentId);
+            });
+        }
+
+        setButtonLoading(button, text) {
+            button.disabled = true;
+            button.innerHTML = `<span class="loading-spinner mr-2"></span>${text}`;
+        }
+
+        setButtonNormal(button, text) {
+            button.disabled = false;
+            button.textContent = text;
+        }
+
+        getCSRFToken() {
+            const token = document.querySelector('[name="csrf-token"]');
+            return token ? token.content : '';
+        }
+
+        showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-3 rounded-md text-white z-50 shadow-lg max-w-sm ${
+                type === 'success' ? 'bg-green-500' :
+                    type === 'error' ? 'bg-red-500' :
+                        type === 'warning' ? 'bg-yellow-500' :
+                            'bg-blue-500'
+            }`;
+
+            notification.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium">${message}</span>
+                <button class="ml-3 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+            notification.style.animation = 'slideInRight 0.3s ease-out';
+            document.body.appendChild(notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Only initialize if we're on the website edit page
+        if (document.querySelector('.component-form')) {
+            window.websiteBuilder = new WebsiteBuilder();
+            console.log('Website Builder initialized');
+        }
+    });
+</script>
 </body>
 </html>

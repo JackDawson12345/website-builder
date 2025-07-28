@@ -35,8 +35,12 @@ Rails.application.routes.draw do
       end
     end
 
-    # Customer contents routes - this creates edit_customer_content_path
-    resources :contents, only: [:edit, :update]
+    # Customer contents routes - updated to handle JSON responses
+    resources :contents, only: [:edit, :update] do
+      member do
+        patch :update_field # For individual field updates if needed
+      end
+    end
 
     root 'dashboard#index'
   end

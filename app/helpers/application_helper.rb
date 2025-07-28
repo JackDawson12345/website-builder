@@ -80,6 +80,16 @@ module ApplicationHelper
       'Your Name'
     when 'company'
       'Your Company'
+    when /bio|about/
+      'Tell us about yourself or your business...'
+    when /service/
+      'Describe your service offering'
+    when /testimonial/
+      'What customers say about you'
+    when /question/
+      'Frequently asked question'
+    when /answer/
+      'Answer to the question'
     else
       "Enter your #{field.humanize.downcase}"
     end
@@ -94,15 +104,99 @@ module ApplicationHelper
     when 'description', 'content'
       'Main content area - you can use multiple lines'
     when 'email'
-      'Contact email address'
+      'Contact email address - must be a valid email format'
     when 'phone'
-      'Contact phone number'
+      'Contact phone number - include area code'
     when 'cta_text'
       'Text for buttons or call-to-action links'
     when 'cta_link', 'link'
-      'URL where the button or link should go'
+      'URL where the button or link should go (include https://)'
+    when 'address'
+      'Your physical business address'
+    when /bio|about/
+      'Personal or business biography'
+    when /service/
+      'Description of services you provide'
+    when /testimonial/
+      'Customer testimonial or review'
+    when /image|photo/
+      'URL to an image file'
     else
       "Content for the #{field.humanize.downcase} field"
     end
+  end
+
+  def get_field_type(field)
+    case field.downcase
+    when /email/
+      'email'
+    when /phone/
+      'tel'
+    when /url|link/
+      'url'
+    when /description|content|bio|about|testimonial|answer/
+      'textarea'
+    when /image|photo/
+      'url'
+    else
+      'text'
+    end
+  end
+
+  def field_requires_validation?(field)
+    %w[email phone url link].any? { |type| field.downcase.include?(type) }
+  end
+
+  # Helper to generate component edit form fields
+  def render_component_field(field, current_value, component_id)
+    field_type = get_field_type(field)
+    placeholder = get_placeholder_for_field(field)
+    help_text = get_help_text_for_field(field)
+
+    case field_type
+    when 'textarea'
+      text_area_tag "content[#{field}]", current_value,
+                    rows: 3,
+                    placeholder: placeholder,
+                    class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                    data: { field: field, component: component_id }
+    when 'email'
+      email_field_tag "content[#{field}]", current_value,
+                      placeholder: placeholder,
+                      class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                      data: { field: field, component: component_id }
+    when 'tel'
+      telephone_field_tag "content[#{field}]", current_value,
+                          placeholder: placeholder,
+                          class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                          data: { field: field, component: component_id }
+    when 'url'
+      url_field_tag "content[#{field}]", current_value,
+                    placeholder: placeholder,
+                    class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                    data: { field: field, component: component_id }
+    else
+      text_field_tag "content[#{field}]", current_value,
+                     placeholder: placeholder,
+                     class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm component-field",
+                     data: { field: field, component: component_id }
+    end
+  end
+
+  # Format component names for display
+  def format_component_name(name)
+    name.humanize.titlecase
+  end
+
+  # Check if component has valid editable fields
+  def component_has_editable_fields?(component)
+    component.editable_fields_array.any?
+  end
+
+  # Generate CSS classes for component state
+  def component_css_classes(component, is_editing = false)
+    classes = %w[border border-gray-200 rounded-lg component-card]
+    classes << 'border-blue-300 bg-blue-50' if is_editing
+    classes.join(' ')
   end
 end

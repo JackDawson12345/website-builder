@@ -8,3 +8,109 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+.component-edit {
+    transition: all 0.3s ease-in-out;
+}
+
+.component-edit.hidden {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+}
+
+.component-edit:not(.hidden) {
+    opacity: 1;
+    max-height: none;
+}
+
+/* Form field focus states */
+.component-field:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+/* Component preview styling */
+.component-preview {
+    position: relative;
+}
+
+.component-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed transparent;
+    pointer-events: none;
+    transition: border-color 0.2s ease;
+}
+
+.component-preview:hover::before {
+    border-color: #e5e7eb;
+}
+
+/* Save button states */
+.save-component-btn:disabled {
+    background-color: #9CA3AF;
+    cursor: not-allowed;
+}
+
+/* Notification animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Loading states */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f4f6;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced component cards */
+.component-card {
+    transition: all 0.2s ease;
+}
+
+.component-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Form validation styles */
+.field-error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.field-success {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
