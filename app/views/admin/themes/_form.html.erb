@@ -1,0 +1,49 @@
+<%= simple_form_for [:admin, @theme], html: { multipart: true, class: "space-y-6" } do |f| %>
+  <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+      <div class="md:col-span-1">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Theme Information</h3>
+        <p class="mt-1 text-sm text-gray-500">
+          Basic details about your theme.
+        </p>
+      </div>
+
+      <div class="mt-5 md:mt-0 md:col-span-2">
+        <div class="space-y-6">
+          <%= f.input :name,
+                      input_html: {
+                        class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      } %>
+
+          <%= f.input :description,
+                      as: :text,
+                      input_html: {
+                        rows: 4,
+                        class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      } %>
+
+          <%= f.input :placeholder_image,
+                      as: :file,
+                      input_html: {
+                        class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md",
+                        accept: "image/*"
+                      },
+                      hint: "Upload a preview image for this theme" %>
+
+          <% if @theme.persisted? && @theme.placeholder_image.attached? %>
+            <div class="mt-2">
+              <p class="text-sm text-gray-500 mb-2">Current image:</p>
+              <%= image_tag @theme.placeholder_image, class: "w-32 h-24 object-cover rounded" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end space-x-3">
+    <%= link_to "Cancel", admin_themes_path,
+                class: "bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50" %>
+    <%= f.submit class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
+  </div>
+<% end %>

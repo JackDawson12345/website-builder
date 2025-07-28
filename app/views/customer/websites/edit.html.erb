@@ -1,0 +1,156 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <h1 class="text-xl font-semibold text-gray-900"><%= @website.name %></h1>
+          <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= @website.published? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
+            <%= @website.published? ? 'Published' : 'Draft' %>
+          </span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <%= link_to "Preview", preview_customer_website_path(page: @current_page),
+                      target: "_blank",
+                      class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+
+          <% if @website.published? %>
+            <%= link_to "Unpublish", unpublish_customer_website_path, method: :patch,
+                        confirm: "Are you sure you want to unpublish your website?",
+                        class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700" %>
+          <% else %>
+            <%= link_to "Publish", publish_customer_website_path, method: :patch,
+                        class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700" %>
+          <% end %>
+
+          <%= link_to "Dashboard", customer_root_path,
+                      class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
+      <!-- Sidebar -->
+      <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
+        <nav class="space-y-1">
+          <!-- Website Settings -->
+          <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <h3 class="text-sm font-medium text-gray-900 mb-3">Website Settings</h3>
+
+            <%= form_with model: @website, url: customer_website_path, method: :patch, local: true, html: { class: "space-y-3" } do |f| %>
+              <%= f.hidden_field :current_page, value: @current_page %>
+
+              <div>
+                <%= f.label :name, class: "block text-xs font-medium text-gray-700" %>
+                <%= f.text_field :name, class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" %>
+              </div>
+
+              <div>
+                <%= f.label :subdomain, class: "block text-xs font-medium text-gray-700" %>
+                <div class="mt-1 flex rounded-md shadow-sm">
+                  <%= f.text_field :subdomain, class: "flex-1 block w-full border-gray-300 rounded-l-md text-sm focus:ring-blue-500 focus:border-blue-500" %>
+                  <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">
+                    .yoursite.com
+                  </span>
+                </div>
+              </div>
+
+              <%= f.submit "Save", class: "w-full bg-blue-600 text-white text-xs py-2 px-3 rounded-md hover:bg-blue-700" %>
+            <% end %>
+          </div>
+
+          <!-- Page Navigation -->
+          <div class="bg-white rounded-lg shadow">
+            <div class="p-4 border-b border-gray-200">
+              <h3 class="text-sm font-medium text-gray-900">Pages</h3>
+            </div>
+            <nav class="p-2">
+              <% @theme_pages.each do |page| %>
+                <%= link_to edit_customer_website_path(page: page.page_type),
+                            class: "group rounded-md px-3 py-2 flex items-center text-sm font-medium #{'text-blue-700 bg-blue-50' if @current_page == page.page_type} #{'text-gray-600 hover:text-gray-900' if @current_page != page.page_type} block w-full" do %>
+                  <span class="truncate"><%= page.page_type.humanize %></span>
+                  <span class="ml-auto text-xs text-gray-400">
+                    <%= page.components.count %>
+                  </span>
+                <% end %>
+              <% end %>
+            </nav>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main content -->
+      <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-medium text-gray-900">
+                <%= @current_theme_page&.page_type&.humanize || 'Page' %> Content
+              </h3>
+              <span class="text-sm text-gray-500">
+                <%= pluralize(@page_components.count, 'component') %>
+              </span>
+            </div>
+
+            <% if @page_components.any? %>
+              <div class="space-y-6">
+                <% @page_components.each do |page_component| %>
+                  <% component = page_component.component %>
+                  <% website_content = @website.website_contents.find_by(component: component) %>
+
+                  <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 class="text-md font-medium text-gray-900"><%= component.name %></h4>
+                        <p class="text-sm text-gray-500"><%= component.component_type.humanize %></p>
+                      </div>
+
+                      <% if website_content %>
+                        <%= link_to "Edit Content", edit_customer_content_path(website_content, page: @current_page),
+                                    class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
+                      <% end %>
+                    </div>
+
+                    <!-- Component Preview -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+                      <% if website_content %>
+                        <%= raw render_component_with_user_content(component, website_content) %>
+                      <% else %>
+                        <p class="text-gray-500 italic">No content available for this component.</p>
+                      <% end %>
+                    </div>
+
+                    <!-- Editable Fields Summary -->
+                    <% if component.editable_fields_array.any? %>
+                      <div class="mt-3">
+                        <p class="text-xs text-gray-500 mb-2">Editable fields:</p>
+                        <div class="flex flex-wrap">
+                          <% component.editable_fields_array.each do |field| %>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-1">
+                              <%= field %>
+                            </span>
+                          <% end %>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No components</h3>
+                <p class="mt-1 text-sm text-gray-500">This page doesn't have any components yet.</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,198 @@
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+  <div class="mb-8 flex justify-between items-start">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">
+        <%= @theme.name %> - <%= @theme_page.page_type.humanize %>
+      </h1>
+      <p class="mt-1 text-sm text-gray-600">
+        Manage components for this page
+      </p>
+    </div>
+
+    <div class="flex space-x-2">
+      <%= link_to "Edit Page", edit_admin_theme_theme_page_path(@theme, @theme_page),
+                  class: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" %>
+      <%= link_to "Back to Theme", admin_theme_path(@theme),
+                  class: "bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Available Components -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Available Components</h3>
+
+        <% if @available_components.any? %>
+          <div class="space-y-2">
+            <% @available_components.each do |component| %>
+              <div class="flex items-center justify-between p-3 border border-gray-200 rounded">
+                <div>
+                  <span class="font-medium text-gray-900"><%= component.name %></span>
+                  <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <%= component.component_type.humanize %>
+                  </span>
+                </div>
+
+                <% unless @theme_page.components.include?(component) %>
+                  <%= button_to "Add", admin_theme_theme_page_theme_page_components_path(@theme, @theme_page),
+                                params: { component_id: component.id },
+                                method: :post,
+                                class: "bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 border-0",
+                                form_class: "inline" %>
+                <% else %>
+                  <span class="text-green-600 text-sm font-medium">Added</span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-gray-500">No components available. Create some components first.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Page Components -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-900">Page Components</h3>
+          <% if @page_components.any? %>
+            <span class="text-sm text-gray-500">Drag to reorder</span>
+          <% end %>
+        </div>
+
+        <% if @page_components.any? %>
+          <div id="sortable-components" class="space-y-2">
+            <% @page_components.each do |page_component| %>
+              <div class="sortable-item flex items-center justify-between p-3 border border-gray-200 rounded bg-green-50 cursor-move"
+                   data-component-id="<%= page_component.component.id %>">
+                <div class="flex items-center">
+                  <div class="mr-3 text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="font-medium text-gray-900"><%= page_component.component.name %></span>
+                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <%= page_component.component.component_type.humanize %>
+                    </span>
+                  </div>
+                </div>
+
+                <%= button_to "Remove", admin_theme_theme_page_theme_page_component_path(@theme, @theme_page, page_component),
+                              method: :delete,
+                              confirm: "Remove this component from the page?",
+                              class: "text-red-600 hover:text-red-900 text-sm font-medium bg-transparent border-0 p-0",
+                              form_class: "inline" %>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-gray-500">No components added to this page yet.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Load SortableJS from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sortableContainer = document.getElementById('sortable-components');
+
+        if (sortableContainer) {
+            console.log('Initializing sortable for container:', sortableContainer);
+
+            const sortable = Sortable.create(sortableContainer, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                handle: '.sortable-item', // Make the entire item draggable
+
+                onStart: function(evt) {
+                    console.log('Drag started:', evt.item);
+                    evt.item.style.opacity = '0.5';
+                },
+
+                onEnd: function(evt) {
+                    console.log('Drag ended:', evt.item);
+                    evt.item.style.opacity = '1';
+
+                    // Get the new order of component IDs
+                    const componentIds = Array.from(sortableContainer.children).map(function(el) {
+                        const id = el.getAttribute('data-component-id');
+                        console.log('Component ID:', id);
+                        return id;
+                    });
+
+                    console.log('New order:', componentIds);
+
+                    // Send AJAX request to update order
+                    fetch('<%= reorder_components_admin_theme_theme_page_path(@theme, @theme_page) %>', {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ component_ids: componentIds })
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                console.log('Order updated successfully');
+                                // Optional: Show success message
+                                showMessage('Component order updated successfully', 'success');
+                            } else {
+                                console.error('Failed to update order');
+                                showMessage('Failed to update component order', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error updating order:', error);
+                            showMessage('Error updating component order', 'error');
+                        });
+                }
+            });
+
+            console.log('Sortable initialized:', sortable);
+        } else {
+            console.log('Sortable container not found');
+        }
+    });
+
+    // Helper function to show messages
+    function showMessage(text, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded text-white z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        messageDiv.textContent = text;
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 3000);
+    }
+</script>
+
+<style>
+    .sortable-ghost {
+        opacity: 0.4;
+    }
+
+    .sortable-chosen {
+        cursor: grabbing;
+    }
+
+    .sortable-drag {
+        transform: rotate(5deg);
+    }
+
+    .sortable-item:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+</style>

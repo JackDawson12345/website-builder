@@ -1,0 +1,14 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+  <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Website Builder</h1>
+
+      <div class="space-y-4">
+        <%= link_to "Sign In", new_user_session_path,
+                    class: "w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 block" %>
+        <%= link_to "Sign Up", new_user_registration_path,
+                    class: "w-full bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 block" %>
+      </div>
+    </div>
+  </div>
+</div>

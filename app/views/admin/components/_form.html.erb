@@ -1,0 +1,240 @@
+<%= simple_form_for [:admin, @component], html: { class: "space-y-6" } do |f| %>
+  <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+      <div class="md:col-span-1">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Component Details</h3>
+        <p class="mt-1 text-sm text-gray-500">
+          Basic information about the component.
+        </p>
+      </div>
+
+      <div class="mt-5 md:mt-0 md:col-span-2">
+        <div class="grid grid-cols-6 gap-6">
+          <div class="col-span-6 sm:col-span-4">
+            <%= f.input :name, input_html: { class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" } %>
+          </div>
+
+          <div class="col-span-6 sm:col-span-2">
+            <%= f.input :component_type,
+                        collection: Component::COMPONENT_TYPES,
+                        prompt: "Select type",
+                        input_html: { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+      <div class="md:col-span-1">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Component Code</h3>
+        <p class="mt-1 text-sm text-gray-500">
+          HTML, CSS, and JavaScript for the component. Use {{field_name}} for editable content.
+        </p>
+      </div>
+
+      <div class="mt-5 md:mt-0 md:col-span-2">
+        <div class="space-y-6">
+          <div>
+            <%= f.input :html_content,
+                        as: :text,
+                        input_html: {
+                          rows: 8,
+                          class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md font-mono text-sm",
+                          placeholder: '<div class="my-component">{{title}}</div>'
+                        } %>
+          </div>
+
+          <div>
+            <%= f.input :css_content,
+                        as: :text,
+                        input_html: {
+                          rows: 6,
+                          class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md font-mono text-sm",
+                          placeholder: '.my-component { color: blue; }'
+                        } %>
+          </div>
+
+          <div>
+            <%= f.input :js_content,
+                        as: :text,
+                        input_html: {
+                          rows: 6,
+                          class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md font-mono text-sm",
+                          placeholder: 'console.log("Component loaded");'
+                        } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+      <div class="md:col-span-1">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Editable Fields</h3>
+        <p class="mt-1 text-sm text-gray-500">
+          Define which parts of the HTML can be edited by customers. Enter field names separated by commas.
+        </p>
+        <div class="mt-3 text-xs text-gray-400">
+          <p>Common fields:</p>
+          <ul class="list-disc list-inside mt-1">
+            <li>title, subtitle</li>
+            <li>description, content</li>
+            <li>email, phone</li>
+            <li>cta_text, cta_link</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-5 md:mt-0 md:col-span-2">
+        <div id="editable-fields">
+          <div class="space-y-3">
+            <div>
+              <label for="editable_fields_input" class="block text-sm font-medium text-gray-700">
+                Field Names (comma separated)
+              </label>
+              <input type="text"
+                     id="editable_fields_input"
+                     value="<%= @component.editable_fields_array.join(', ') %>"
+                     placeholder="title, subtitle, description, cta_text, cta_link"
+                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              <p class="mt-1 text-xs text-gray-500">
+                These field names must match the {{field_name}} placeholders in your HTML
+              </p>
+            </div>
+
+            <div>
+              <button type="button" id="update-fields-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm">
+                Update Fields Preview
+              </button>
+            </div>
+          </div>
+
+          <%= f.input :editable_fields, as: :hidden %>
+
+          <div id="fields-preview" class="mt-4">
+            <p class="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+            <div id="fields-tags">
+              <% @component.editable_fields_array.each do |field| %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-2">
+                  <%= field %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end space-x-3">
+    <%= link_to "Cancel", admin_components_path, class: "bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+    <%= f.submit class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+  </div>
+<% end %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('editable_fields_input');
+        const preview = document.getElementById('fields-tags');
+        const updateBtn = document.getElementById('update-fields-btn');
+
+        // Find the hidden field - Simple Form uses different naming conventions
+        let hiddenField = document.getElementById('component_editable_fields') ||
+            document.querySelector('input[name="component[editable_fields]"]') ||
+            document.querySelector('input[type="hidden"][id*="editable_fields"]');
+
+        console.log('Found elements:', {
+            input: !!input,
+            preview: !!preview,
+            updateBtn: !!updateBtn,
+            hiddenField: !!hiddenField
+        });
+
+        function updateFieldsPreview() {
+            console.log('updateFieldsPreview called');
+
+            if (!input) {
+                console.error('Input field not found');
+                return;
+            }
+
+            const fieldsText = input.value.trim();
+            console.log('Input value:', fieldsText);
+
+            const fields = fieldsText ? fieldsText.split(',').map(f => f.trim()).filter(f => f.length > 0) : [];
+            console.log('Parsed fields:', fields);
+
+            // Update hidden field with JSON
+            if (hiddenField) {
+                hiddenField.value = JSON.stringify(fields);
+                console.log('Updated hidden field value:', hiddenField.value);
+            } else {
+                console.error('Hidden field not found');
+            }
+
+            // Update preview
+            if (preview) {
+                preview.innerHTML = '';
+                if (fields.length > 0) {
+                    fields.forEach(field => {
+                        const span = document.createElement('span');
+                        span.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-2';
+                        span.textContent = field;
+                        preview.appendChild(span);
+                    });
+                    console.log('Added', fields.length, 'field tags to preview');
+                } else {
+                    const emptyMsg = document.createElement('span');
+                    emptyMsg.className = 'text-gray-400 text-sm italic';
+                    emptyMsg.textContent = 'No fields defined';
+                    preview.appendChild(emptyMsg);
+                    console.log('Added empty message to preview');
+                }
+            } else {
+                console.error('Preview element not found');
+            }
+        }
+
+        // Event listeners
+        if (updateBtn) {
+            updateBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Update button clicked');
+                updateFieldsPreview();
+            });
+            console.log('Update button listener added');
+        } else {
+            console.error('Update button not found');
+        }
+
+        if (input) {
+            input.addEventListener('blur', updateFieldsPreview);
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateFieldsPreview();
+                }
+            });
+            console.log('Input field listeners added');
+        }
+
+        // Initialize on page load
+        console.log('Initializing...');
+        updateFieldsPreview();
+
+        // Update before form submission
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                console.log('Form submitting, updating fields...');
+                updateFieldsPreview();
+            });
+            console.log('Form listener added');
+        } else {
+            console.error('Form not found');
+        }
+    });
+</script>

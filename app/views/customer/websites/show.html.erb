@@ -1,0 +1,95 @@
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+  <div class="mb-8 text-center">
+    <h1 class="text-3xl font-bold text-gray-900">Create Your Website</h1>
+    <p class="mt-2 text-lg text-gray-600">
+      Choose a theme to get started with your website
+    </p>
+  </div>
+
+  <%= form_with url: customer_website_path, method: :post, local: true, html: { class: "space-y-8" } do |f| %>
+    <!-- Website Name Input -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <div class="max-w-md mx-auto">
+        <label for="website_name" class="block text-sm font-medium text-gray-700 mb-2">
+          Website Name
+        </label>
+        <%= f.text_field :website_name,
+                         placeholder: "My Awesome Website",
+                         class: "mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+        <p class="mt-2 text-sm text-gray-500">
+          You can change this later in your website settings.
+        </p>
+      </div>
+    </div>
+
+    <!-- Theme Selection -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-6 text-center">Choose Your Theme</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% @themes.each do |theme| %>
+          <div class="theme-card border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors"
+               onclick="selectTheme(<%= theme.id %>)">
+
+            <% if theme.placeholder_image.attached? %>
+              <%= image_tag theme.placeholder_image, class: "w-full h-48 object-cover rounded-md mb-4" %>
+            <% else %>
+              <div class="w-full h-48 bg-gray-100 rounded-md mb-4 flex items-center justify-center">
+                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+            <% end %>
+
+            <div class="text-center">
+              <h4 class="text-lg font-medium text-gray-900 mb-2"><%= theme.name %></h4>
+              <% if theme.description.present? %>
+                <p class="text-sm text-gray-600 mb-3"><%= truncate(theme.description, length: 100) %></p>
+              <% end %>
+
+              <div class="flex justify-center items-center space-x-4 text-xs text-gray-500">
+                <span><%= pluralize(theme.theme_pages.count, 'page') %></span>
+                <span>•</span>
+                <span><%= pluralize(theme.websites.count, 'website') %> using this</span>
+              </div>
+            </div>
+
+            <input type="radio" name="theme_id" value="<%= theme.id %>" class="hidden theme-radio">
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="text-center">
+      <%= f.submit "Create My Website",
+                   id: "create-btn",
+                   class: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed",
+                   disabled: true %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+    let selectedThemeId = null;
+
+    function selectTheme(themeId) {
+        // Remove previous selection
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
+            card.classList.add('border-gray-200');
+        });
+
+        // Add selection to clicked theme
+        event.currentTarget.classList.remove('border-gray-200');
+        event.currentTarget.classList.add('border-blue-500', 'ring-2', 'ring-blue-500');
+
+        // Set the radio button
+        document.querySelector(`input[value="${themeId}"]`).checked = true;
+
+        // Enable submit button
+        document.getElementById('create-btn').disabled = false;
+
+        selectedThemeId = themeId;
+    }
+</script>
