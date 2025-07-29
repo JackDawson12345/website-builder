@@ -223,7 +223,7 @@
 
                 if (sidebar && !sidebar.contains(e.target) &&
                   !Array.from(componentContainers).some(container => container.contains(e.target))) {
-                    this.hideEditSidebar();
+                    this.hideEditSidebar(); // This will call hideEditSidebar which removes the class
                 }
             });
         }
@@ -273,9 +273,12 @@
             });
         }
 
+
+
         showEditSidebar(componentId) {
             const componentContainer = document.getElementById(`component-${componentId}`);
             const sidebar = document.getElementById('edit-sidebar');
+            const previewSection = document.querySelector('.edit-preview-section')
             const titleElement = document.getElementById('edit-component-title');
             const typeElement = document.getElementById('edit-component-type');
             const formContainer = document.getElementById('edit-form-container');
@@ -318,6 +321,11 @@
 
             // Show sidebar with animation
             sidebar.classList.remove('hidden');
+
+            if (previewSection) {
+                previewSection.classList.add('sidebar-open');
+            }
+
             setTimeout(() => {
                 sidebar.classList.add('sidebar-visible');
             }, 10);
@@ -338,9 +346,16 @@
         hideEditSidebar() {
             const sidebar = document.getElementById('edit-sidebar');
             const formContainer = document.getElementById('edit-form-container');
+            const previewSection = document.querySelector('.edit-preview-section');
 
             if (sidebar) {
                 sidebar.classList.remove('sidebar-visible');
+
+                // Remove class from preview section when sidebar closes
+                if (previewSection) {
+                    previewSection.classList.remove('sidebar-open');
+                }
+
                 setTimeout(() => {
                     sidebar.classList.add('hidden');
                     if (formContainer) formContainer.innerHTML = '';
@@ -690,6 +705,82 @@
             window.websiteBuilder = new WebsiteBuilder();
             console.log('Website Builder initialized');
         }
+    });
+
+    // Sidebar toggle functionality with debugging
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, looking for elements...');
+
+        const toggleButton = document.querySelector('.sidebar-pages-toggle');
+        const sidebar = document.querySelector('#pages-sidebar');
+        const editPreviewSection = document.querySelector('.edit-preview-section');
+
+        console.log('Toggle button:', toggleButton);
+        console.log('Sidebar:', sidebar);
+        console.log('Edit preview section:', editPreviewSection);
+
+        if (!toggleButton) {
+            console.error('Toggle button not found! Make sure element with class "sidebar-pages-toggle" exists');
+            return;
+        }
+
+        if (!sidebar) {
+            console.error('Sidebar not found! Make sure element with id "pages-sidebar" exists');
+            return;
+        }
+
+        console.log('Both elements found, adding click listener...');
+
+        toggleButton.addEventListener('click', function(e) {
+            console.log('Toggle button clicked!');
+            e.preventDefault(); // Prevent default action if it's a link/button
+
+            // Toggle the 'hidden' class instead of style.display
+            sidebar.classList.toggle('hidden');
+
+            if (sidebar.classList.contains('hidden')) {
+                console.log('Hiding sidebar');
+                // Remove sidebar-open class when closing
+                if (editPreviewSection) {
+                    editPreviewSection.classList.remove('sidebar-open');
+                }
+            } else {
+                console.log('Showing sidebar');
+                // Add sidebar-open class when opening
+                if (editPreviewSection) {
+                    editPreviewSection.classList.add('sidebar-open');
+                }
+            }
+        });
+
+        // Close sidebar when clicking the close button
+        const closeButton = document.querySelector('#close-sidebar-btn');
+        if (closeButton) {
+            closeButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                sidebar.classList.add('hidden');
+                // Remove sidebar-open class when closing
+                if (editPreviewSection) {
+                    editPreviewSection.classList.remove('sidebar-open');
+                }
+                console.log('Close button clicked - hiding sidebar');
+            });
+        }
+
+        // Close sidebar when clicking outside of it
+        document.addEventListener('click', function(e) {
+            // Check if sidebar is visible and click is outside both sidebar and toggle button
+            if (!sidebar.classList.contains('hidden') &&
+              !sidebar.contains(e.target) &&
+              !toggleButton.contains(e.target)) {
+                sidebar.classList.add('hidden');
+                // Remove sidebar-open class when closing
+                if (editPreviewSection) {
+                    editPreviewSection.classList.remove('sidebar-open');
+                }
+                console.log('Clicked outside - hiding sidebar');
+            }
+        });
     });
 </script>
 </body>

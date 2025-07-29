@@ -70,7 +70,7 @@
   <!--  Content-->
   <div class="flex w-full relative">
     <!--  Sidebar Section-->
-    <div class="h-screen left-0 top-0 flex flex-col items-center gap-5 pt-5" style="width: 65px; border-right: 1px solid black">
+    <div class="min-h-screen left-0 top-0 flex flex-col items-center gap-5 pt-5" style="width: 65px; border-right: 1px solid black">
       <div class="sidebar-pages-toggle">
         <svg xmlns="http://www.w3.org/2000/svg" width="25.5" height="30" viewBox="0 0 17 20" fill="none">
           <rect x="1" y="5" width="11" height="14" stroke="black" stroke-width="2"/>
@@ -115,10 +115,55 @@
           <circle cx="6" cy="6" r="2" fill="black"/>
         </svg>
       </div>
+      <div id="edit-sidebar" class="bg-white hidden">
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-900" id="edit-component-title">Edit Component</h3>
+            <button id="close-sidebar-btn" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1" id="edit-component-type">Component Type</p>
+        </div>
+
+        <div class="p-4" id="edit-form-container">
+          <!-- Dynamic edit form will be inserted here -->
+        </div>
+      </div>
+      <div id="pages-sidebar" class="bg-white hidden">
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-900" id="page-component-title">Edit Component</h3>
+            <button id="close-pages-sidebar-btn" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1" id="edit-component-type">Component Type</p>
+        </div>
+
+        <div class="p-4" id="pages-form-container">
+          <nav class="p-2">
+            <% @theme_pages.each do |page| %>
+              <%= link_to edit_customer_website_path(page: page.page_type),
+                          class: "group rounded-md px-3 py-2 flex items-center text-sm font-medium #{'text-blue-700 bg-blue-50' if @current_page == page.page_type} #{'text-gray-600 hover:text-gray-900' if @current_page != page.page_type} block w-full" do %>
+                <span class="truncate"><%= page.page_type.humanize %></span>
+                <span class="ml-auto text-xs text-gray-400">
+                  <%= page.components.count %>
+                </span>
+              <% end %>
+            <% end %>
+          </nav>
+        </div>
+      </div>
+
     </div>
 
     <!--  Preview Section-->
-    <div class="min-h-screen transition-all duration-300" style="width: calc( 100% - 65px)">
+    <div class="min-h-screen transition-all duration-300 edit-preview-section" style="width: calc( 100% - 65px)">
       <div class="flex-1 w-full">
         <div class="bg-white">
           <div class="">
@@ -167,41 +212,6 @@
   </div>
 </div>
 
-<!-- Page Navigation -->
-<div class="bg-white rounded-lg shadow mb-6">
-  <div class="p-4 border-b border-gray-200">
-    <h3 class="text-sm font-medium text-gray-900">Pages</h3>
-  </div>
-  <nav class="p-2">
-    <% @theme_pages.each do |page| %>
-      <%= link_to edit_customer_website_path(page: page.page_type),
-                  class: "group rounded-md px-3 py-2 flex items-center text-sm font-medium #{'text-blue-700 bg-blue-50' if @current_page == page.page_type} #{'text-gray-600 hover:text-gray-900' if @current_page != page.page_type} block w-full" do %>
-        <span class="truncate"><%= page.page_type.humanize %></span>
-        <span class="ml-auto text-xs text-gray-400">
-          <%= page.components.count %>
-        </span>
-      <% end %>
-    <% end %>
-  </nav>
-</div>
-
-<div id="edit-sidebar" class="bg-white rounded-lg shadow hidden">
-  <div class="p-4 border-b border-gray-200">
-    <div class="flex items-center justify-between">
-      <h3 class="text-sm font-medium text-gray-900" id="edit-component-title">Edit Component</h3>
-      <button id="close-sidebar-btn" class="text-gray-400 hover:text-gray-600">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-    </div>
-    <p class="text-xs text-gray-500 mt-1" id="edit-component-type">Component Type</p>
-  </div>
-
-  <div class="p-4" id="edit-form-container">
-    <!-- Dynamic edit form will be inserted here -->
-  </div>
-</div>
 
 <!-- Component CSS -->
 <style>
@@ -210,6 +220,34 @@
   <%= component.css_content %>
   <% end %>
   <% end %>
+
+  #edit-sidebar{
+      position: absolute;
+        left: 65px;
+        top: 0px;
+        width: 300px;
+      z-index: 2;
+  }
+
+  #pages-sidebar{
+      position: absolute;
+      left: 65px;
+      top: 0px;
+      width: 300px;
+      z-index: 1;
+      height: -webkit-fill-available;
+  }
+
+  .edit-preview-section {
+      transition: width 0.3s ease-in-out,
+      transform 0.3s ease-in-out;
+  }
+
+  .edit-preview-section.sidebar-open {
+      width: calc(100% - 365px) !important;
+      transform: translateX(300px);
+      position: relative;
+  }
 </style>
 
 <!-- Component JavaScript -->
@@ -219,4 +257,5 @@
     <%= component.js_content %>
     <% end %>
     <% end %>
+
 </script>
